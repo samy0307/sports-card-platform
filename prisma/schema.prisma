@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Modell für Benutzer
+model User {
+  id          String       @id @default(cuid()) // Benutzer-ID
+  email       String       @unique // Eindeutige E-Mail-Adresse
+  username    String       @unique // Eindeutiger Benutzername
+  createdAt   DateTime     @default(now()) // Erstellungsdatum
+  updatedAt   DateTime     @updatedAt // Letzte Aktualisierung
+  collections Collection[] // Beziehung zu den Sammlungen des Benutzers
+}
+
+model Sport {
+  id        String   @id @default(cuid()) // Sportart-ID
+  name      String   @unique // Eindeutiger Sportname
+  iconUrl   String // URL des Sport-Icons
+  createdAt DateTime @default(now()) // Erstellungsdatum
+  updatedAt DateTime @updatedAt // Letzte Aktualisierung
+  cards     Card[] // Beziehung zu den Karten dieser Sportart
+}
+
+model Card {
+  id           String   @id @default(cuid()) // Karten-ID
+  name         String // Name der Karte (z.B. Spielername, Kartentyp)
+  sportId      String // Fremdschlüssel zur Sportart
+  collectionId String? // Fremdschlüssel zur Sammlung (optional)
+  graded       Boolean  @default(false) // Ob die Karte gegraded wurde (bewertet)
+  grade        String? // Bewertung der Karte (z.B. PSA10), falls gegraded
+  value        Float? // Optional: Wert der Karte
+  year         Int // Erscheinungsjahr der Karte (Pflichtfeld)
+  rarity       String? // Optional: Seltenheit der Karte
+  condition    String // Zustand der Karte (Pflichtfeld, z.B. 'Mint', 'Near Mint')
+  createdAt    DateTime @default(now()) // Erstellungsdatum
+  updatedAt    DateTime @updatedAt // Letzte Aktualisierung
+
+  sport      Sport       @relation(fields: [sportId], references: [id], onDelete: Cascade) // Beziehung zur Sportart
+  collection Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull) // Beziehung zur Sammlung
+  images     Image[] // Beziehung zu mehreren Bildern der Karte
+}
+
+model Collection {
+  id        String   @id @default(cuid()) // Sammlungs-ID
+  userId    String // Fremdschlüssel zum Benutzer
+  name      String // Name der Sammlung
+  createdAt DateTime @default(now()) // Erstellungsdatum
+  updatedAt DateTime @updatedAt // Letzte Aktualisierung
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade) // Beziehung zum Benutzer
+  cards Card[] // Beziehung zu den Karten in der Sammlung
+}
+
+model Image {
+  id        String   @id @default(cuid()) // Bild-ID
+  url       String // URL oder Pfad zum Bild
+  cardId    String // Fremdschlüssel zur Karte
+  createdAt DateTime @default(now()) // Erstellungsdatum
+
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade) // Beziehung zur Karte, bei Löschung der Karte werden die Bilder gelöscht
+}
